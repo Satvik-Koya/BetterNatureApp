@@ -64,7 +64,10 @@ export default function SignupStep3({ route }) {
         await uploadIdDocument(authData.user.id, imageUri);
       }
 
-      // Auth state change listener will handle navigation
+      // Flip auth state so the root navigator switches to Main.
+      if (authData?.user) {
+        setUser(authData.user);
+      }
     } catch (e) {
       Alert.alert('Sign Up Failed', e.message || 'Something went wrong');
     } finally {

@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, TextInput } from 'react-native';
 import { Colors, Type, Radius, Shadows } from '../../config/theme';
 import BrushText from '../../components/ui/BrushText';
 import Button from '../../components/ui/Button';
 import Toggle from '../../components/ui/Toggle';
 import { openDonationForm } from '../../services/zeffy';
+import { payWithApplePay, payWithCard, isApplePayAvailable } from '../../services/payments';
+import { recordDonation } from '../../services/database';
+import useAuthStore from '../../store/authStore';
 
 const AMOUNTS = [5, 15, 25, 50];
 
@@ -13,10 +16,51 @@ export default function DonateScreen() {
   const [customAmount, setCustomAmount] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
   const [isCustom, setIsCustom] = useState(false);
+  const [paying, setPaying] = useState(false);
+  const user = useAuthStore((s) => s.user);
 
-  function handleDonate() {
-    const amount = isCustom ? Number(customAmount) : selectedAmount;
-    openDonationForm({ amount, recurring: isRecurring });
+  function getAmount() {
+    if (isCustom) {
+      const n = Number(customAmount);
+      return isNaN(n) || n <= 0 ? 0 : n;
+    }
+    return selectedAmount;
+  }
+
+  async function handlePay(method) {
+    const amount = getAmount();
+    if (!amount) {
+      Alert.alert('Pick an amount', 'Enter a donation amount to continue.');
+      return;
+    }
+    setPaying(true);
+    try {
+      const fn = method === 'apple' ? payWithApplePay : payWithCard;
+      const result = await fn({
+        amount,
+        label: 'Better Nature Donation',
+        recurring: isRecurring,
+      });
+      if (result.ok) {
+        await recordDonation({
+          user_id: user?.id,
+          amount,
+          recurring: isRecurring,
+          method: method === 'apple' ? 'apple_pay' : 'card',
+          status: 'succeeded',
+          created_at: new Date().toISOString(),
+        });
+        Alert.alert('Thank you!', `Your $${amount}${isRecurring ? '/month' : ''} donation supports food rescue, conservation, and clean water programs.`);
+      }
+    } catch (e) {
+      Alert.alert('Payment failed', e.message || 'Please try again');
+    } finally {
+      setPaying(false);
+    }
+  }
+
+  function handleZeffyFallback() {
+    openDonationForm({ amount: getAmount(), recurring: isRecurring });
   }
 
   return (
@@ -65,7 +109,14 @@ export default function DonateScreen() {
       {isCustom && (
         <View style={styles.customInput}>
           <Text style={styles.dollar}>$</Text>
-          <Text style={styles.customHint}>Enter amount via Zeffy</Text>
+          <TextInput
+            value={customAmount}
+            onChangeText={setCustomAmount}
+            keyboardType="number-pad"
+            placeholder="0"
+            placeholderTextColor={Colors.grayMid}
+            style={styles.customField}
+          />
         </View>
       )}
 
@@ -85,32 +136,50 @@ export default function DonateScreen() {
         Payment Methods
       </BrushText>
 
-      <TouchableOpacity style={styles.paymentOption} onPress={handleDonate}>
-        <Text style={styles.paymentEmoji}>🍎</Text>
-        <Text style={styles.paymentText}>Apple Pay</Text>
-        <Text style={styles.arrow}>›</Text>
-      </TouchableOpacity>
+      {isApplePayAvailable && (
+        <TouchableOpacity
+          style={[styles.paymentOption, styles.applePayBtn]}
+          onPress={() => handlePay('apple')}
+          disabled={paying}
+        >
+          <Text style={styles.paymentEmoji}></Text>
+          <Text style={styles.applePayText}>Pay</Text>
+        </TouchableOpacity>
+      )}
 
-      <TouchableOpacity style={styles.paymentOption} onPress={handleDonate}>
+      <TouchableOpacity
+        style={styles.paymentOption}
+        onPress={() => handlePay('card')}
+        disabled={paying}
+      >
         <Text style={styles.paymentEmoji}>💳</Text>
         <Text style={styles.paymentText}>Credit / Debit Card</Text>
         <Text style={styles.arrow}>›</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.paymentOption} onPress={handleDonate}>
-        <Text style={styles.paymentEmoji}>📱</Text>
-        <Text style={styles.paymentText}>Tap to Pay</Text>
+      <TouchableOpacity
+        style={styles.paymentOption}
+        onPress={handleZeffyFallback}
+        disabled={paying}
+      >
+        <Text style={styles.paymentEmoji}>🌐</Text>
+        <Text style={styles.paymentText}>Donate via Zeffy (web)</Text>
         <Text style={styles.arrow}>›</Text>
       </TouchableOpacity>
 
       <Button
-        title={`Donate $${isCustom ? '...' : selectedAmount}${isRecurring ? '/month' : ''}`}
-        onPress={handleDonate}
+        title={
+          paying
+            ? 'Processing…'
+            : `Donate $${getAmount() || (isCustom ? '...' : selectedAmount)}${isRecurring ? '/month' : ''}`
+        }
+        onPress={() => handlePay(isApplePayAvailable ? 'apple' : 'card')}
+        loading={paying}
         style={styles.donateBtn}
       />
 
       <Text style={styles.powered}>
-        Powered by Zeffy · Free for nonprofits · Tax-deductible receipt provided
+        Secured by Apple Pay · Tax-deductible receipt sent to your email
       </Text>
     </ScrollView>
   );
@@ -160,6 +229,7 @@ const styles = StyleSheet.create({
   },
   dollar: { fontSize: 20, fontWeight: '700', color: Colors.dark, marginRight: 8 },
   customHint: { ...Type.caption },
+  customField: { flex: 1, fontSize: 18, fontWeight: '600', color: Colors.dark, paddingVertical: 0 },
   recurringRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -185,6 +255,12 @@ const styles = StyleSheet.create({
   paymentEmoji: { fontSize: 24, marginRight: 14 },
   paymentText: { flex: 1, fontSize: 15, fontWeight: '500', color: Colors.dark },
   arrow: { fontSize: 24, color: Colors.grayMid },
+  applePayBtn: {
+    backgroundColor: '#000',
+    justifyContent: 'center',
+    paddingVertical: 18,
+  },
+  applePayText: { color: '#fff', fontSize: 18, fontWeight: '600' },
   donateBtn: { marginTop: 24 },
   powered: { ...Type.caption, textAlign: 'center', marginTop: 16 },
 });

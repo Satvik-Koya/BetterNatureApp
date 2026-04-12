@@ -2,6 +2,7 @@ import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { Colors, Type } from '../../config/theme';
 import { Radius, Shadows } from '../../config/theme';
+import { hp } from '../../config/scale';
 
 /**
  * Button — primary pink pill, secondary outline, or small variant.
@@ -52,7 +53,7 @@ export default function Button({
 
 const styles = StyleSheet.create({
   base: {
-    height: 52,
+    height: hp(52),
     borderRadius: Radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
@@ -68,7 +69,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.pink,
   },
   small: {
-    height: 36,
+    height: hp(36),
     borderRadius: 18,
     paddingHorizontal: 16,
     backgroundColor: Colors.pink,

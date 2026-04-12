@@ -13,8 +13,10 @@ import BrushText from '../../components/ui/BrushText';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { createRestaurant } from '../../services/database';
+import useAuthStore, { ROLES } from '../../store/authStore';
 
 export default function RestaurantSignup({ navigation }) {
+  const setUser = useAuthStore((s) => s.setUser);
   const [form, setForm] = useState({
     name: '',
     address: '',
@@ -38,11 +40,23 @@ export default function RestaurantSignup({ navigation }) {
 
     setLoading(true);
     try {
-      await createRestaurant(form);
+      const created = await createRestaurant(form);
       Alert.alert(
-        'Application Submitted!',
-        'We\'ll review your application and get back to you within 48 hours.',
-        [{ text: 'OK', onPress: () => navigation.goBack() }]
+        'Welcome to Better Nature!',
+        'Your restaurant is signed up. Opening your dashboard…',
+        [
+          {
+            text: 'Continue',
+            onPress: () =>
+              setUser({
+                id: created?.id || `mock-restaurant-${Date.now()}`,
+                name: form.name,
+                email: form.email,
+                phone: form.phone,
+                role: ROLES.RESTAURANT,
+              }),
+          },
+        ]
       );
     } catch (e) {
       Alert.alert('Error', e.message || 'Failed to submit');

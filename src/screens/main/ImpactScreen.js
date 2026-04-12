@@ -5,6 +5,7 @@ import BrushText from '../../components/ui/BrushText';
 import StatCard from '../../components/ui/StatCard';
 import BrushDivider from '../../components/ui/BrushDivider';
 import useAuthStore from '../../store/authStore';
+import { LeaderboardBody } from './LeaderboardScreen';
 
 export default function ImpactScreen() {
   const user = useAuthStore((s) => s.user);
@@ -97,6 +98,18 @@ export default function ImpactScreen() {
           Attend your first event to earn your first badge!
         </Text>
       </View>
+
+      <BrushDivider />
+
+      {/* Leaderboard — embedded so it inherits this screen's scroll. */}
+      <BrushText variant="sectionHeader" style={styles.sectionTitle}>
+        Leaderboard
+      </BrushText>
+      <Text style={styles.leaderIntro}>
+        See who's making the biggest impact. Filter by time, project, or sort
+        by meals, hours, events, or dollars raised.
+      </Text>
+      <LeaderboardBody embedded />
     </ScrollView>
   );
 }
@@ -134,4 +147,10 @@ const styles = StyleSheet.create({
   },
   badgeEmoji: { fontSize: 48, marginBottom: 12 },
   badgesText: { ...Type.body, color: Colors.gray, textAlign: 'center' },
+  leaderIntro: {
+    ...Type.caption,
+    color: Colors.gray,
+    marginTop: -4,
+    marginBottom: 12,
+  },
 });

@@ -3,6 +3,9 @@ export const Fonts = {
   system: undefined, // Platform default (SF Pro on iOS)
 };
 
+// NOTE: these are raw baseline sizes. The global Text render patch in App.js
+// applies responsive scaling (fp) to every fontSize at render time, so we
+// don't call fp() here — otherwise sizes would get scaled twice.
 export const Type = {
   screenTitle: {
     fontFamily: 'Caveat-Bold',

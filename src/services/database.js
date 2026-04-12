@@ -1,7 +1,25 @@
-import { supabase } from '../config/supabase';
+import { supabase, isSupabaseConfigured } from '../config/supabase';
+import {
+  mockChapters,
+  mockEvents,
+  mockPickups,
+  mockRestaurants,
+  mockNotifications,
+  mockMemberOfMonth,
+  mockAnimalsHelped,
+  mockAnnouncements,
+  mockBadges,
+  mockChecklistProgress,
+  mockMembers,
+  mockUserSignups,
+  mockDonations,
+  mockOrgMetrics,
+  mockMemberActivity,
+} from './mockData';
 
 // ── Chapters ──
 export async function fetchChapters() {
+  if (!isSupabaseConfigured) return mockChapters;
   const { data, error } = await supabase
     .from('chapters')
     .select('*')
@@ -12,6 +30,7 @@ export async function fetchChapters() {
 }
 
 export async function fetchChapterById(id) {
+  if (!isSupabaseConfigured) return mockChapters.find((c) => c.id === id) || mockChapters[0];
   const { data, error } = await supabase
     .from('chapters')
     .select('*')
@@ -22,6 +41,7 @@ export async function fetchChapterById(id) {
 }
 
 export async function createChapter(chapter) {
+  if (!isSupabaseConfigured) return { id: `ch-mock-${Date.now()}`, ...chapter };
   const { data, error } = await supabase
     .from('chapters')
     .insert(chapter)
@@ -32,6 +52,7 @@ export async function createChapter(chapter) {
 }
 
 export async function updateChapter(id, updates) {
+  if (!isSupabaseConfigured) return { id, ...updates };
   const { data, error } = await supabase
     .from('chapters')
     .update(updates)
@@ -44,6 +65,9 @@ export async function updateChapter(id, updates) {
 
 // ── Events ──
 export async function fetchEvents(chapterId) {
+  if (!isSupabaseConfigured) {
+    return chapterId ? mockEvents.filter((e) => e.chapter_id === chapterId) : mockEvents;
+  }
   let query = supabase
     .from('events')
     .select('*')
@@ -58,6 +82,7 @@ export async function fetchEvents(chapterId) {
 }
 
 export async function fetchEventById(id) {
+  if (!isSupabaseConfigured) return mockEvents.find((e) => e.id === id) || mockEvents[0];
   const { data, error } = await supabase
     .from('events')
     .select('*')
@@ -68,6 +93,7 @@ export async function fetchEventById(id) {
 }
 
 export async function createEvent(event) {
+  if (!isSupabaseConfigured) return { id: `ev-mock-${Date.now()}`, ...event };
   const { data, error } = await supabase
     .from('events')
     .insert(event)
@@ -78,6 +104,7 @@ export async function createEvent(event) {
 }
 
 export async function signUpForEvent(eventId, userId) {
+  if (!isSupabaseConfigured) return;
   const { error: signupError } = await supabase
     .from('event_signups')
     .insert({ event_id: eventId, user_id: userId });
@@ -87,7 +114,6 @@ export async function signUpForEvent(eventId, userId) {
     event_id_input: eventId,
   });
   if (updateError) {
-    // Fallback: manual increment
     const event = await fetchEventById(eventId);
     await supabase
       .from('events')
@@ -97,6 +123,7 @@ export async function signUpForEvent(eventId, userId) {
 }
 
 export async function cancelEventSignup(eventId, userId) {
+  if (!isSupabaseConfigured) return;
   const { error: deleteError } = await supabase
     .from('event_signups')
     .delete()
@@ -112,6 +139,7 @@ export async function cancelEventSignup(eventId, userId) {
 }
 
 export async function getUserSignups(userId) {
+  if (!isSupabaseConfigured) return mockUserSignups;
   const { data, error } = await supabase
     .from('event_signups')
     .select('event_id')
@@ -122,6 +150,9 @@ export async function getUserSignups(userId) {
 
 // ── Pickups ──
 export async function fetchPickups(chapterId) {
+  if (!isSupabaseConfigured) {
+    return chapterId ? mockPickups.filter((p) => p.chapter_id === chapterId) : mockPickups;
+  }
   let query = supabase
     .from('pickups')
     .select('*')
@@ -136,6 +167,10 @@ export async function fetchPickups(chapterId) {
 }
 
 export async function claimPickup(pickupId, userId) {
+  if (!isSupabaseConfigured) {
+    const pk = mockPickups.find((p) => p.id === pickupId);
+    return pk ? { ...pk, status: 'claimed', claimed_by: userId } : null;
+  }
   const { data, error } = await supabase
     .from('pickups')
     .update({
@@ -152,6 +187,7 @@ export async function claimPickup(pickupId, userId) {
 }
 
 export async function completePickup(pickupId) {
+  if (!isSupabaseConfigured) return;
   const { error } = await supabase
     .from('pickups')
     .update({ status: 'completed' })
@@ -161,6 +197,7 @@ export async function completePickup(pickupId) {
 
 // ── Restaurants ──
 export async function fetchRestaurants(status = 'approved') {
+  if (!isSupabaseConfigured) return mockRestaurants.filter((r) => r.status === status);
   const { data, error } = await supabase
     .from('restaurants')
     .select('*')
@@ -171,6 +208,7 @@ export async function fetchRestaurants(status = 'approved') {
 }
 
 export async function createRestaurant(restaurant) {
+  if (!isSupabaseConfigured) return { id: `r-mock-${Date.now()}`, ...restaurant };
   const { data, error } = await supabase
     .from('restaurants')
     .insert(restaurant)
@@ -181,6 +219,7 @@ export async function createRestaurant(restaurant) {
 }
 
 export async function updateRestaurant(id, updates) {
+  if (!isSupabaseConfigured) return { id, ...updates };
   const { data, error } = await supabase
     .from('restaurants')
     .update(updates)
@@ -193,6 +232,7 @@ export async function updateRestaurant(id, updates) {
 
 // ── Donations ──
 export async function recordDonation(donation) {
+  if (!isSupabaseConfigured) return { id: `d-mock-${Date.now()}`, ...donation };
   const { data, error } = await supabase
     .from('donations')
     .insert(donation)
@@ -203,6 +243,10 @@ export async function recordDonation(donation) {
 }
 
 export async function fetchDonationHistory(userId) {
+  if (!isSupabaseConfigured) {
+    if (!userId) return mockDonations;
+    return mockDonations.filter((d) => d.user_id === userId);
+  }
   const { data, error } = await supabase
     .from('donations')
     .select('*')
@@ -212,8 +256,19 @@ export async function fetchDonationHistory(userId) {
   return data;
 }
 
+export async function fetchAllDonations() {
+  if (!isSupabaseConfigured) return mockDonations;
+  const { data, error } = await supabase
+    .from('donations')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
 // ── Notifications ──
 export async function fetchNotifications(userId) {
+  if (!isSupabaseConfigured) return mockNotifications;
   const { data, error } = await supabase
     .from('notifications')
     .select('*')
@@ -225,6 +280,7 @@ export async function fetchNotifications(userId) {
 }
 
 export async function markNotificationRead(notifId) {
+  if (!isSupabaseConfigured) return;
   const { error } = await supabase
     .from('notifications')
     .update({ read: true })
@@ -233,12 +289,14 @@ export async function markNotificationRead(notifId) {
 }
 
 export async function createNotification(notif) {
+  if (!isSupabaseConfigured) return;
   const { error } = await supabase.from('notifications').insert(notif);
   if (error) throw error;
 }
 
 // ── Member of the Month ──
 export async function fetchMemberOfMonth(chapterId) {
+  if (!isSupabaseConfigured) return mockMemberOfMonth;
   const now = new Date();
   const { data, error } = await supabase
     .from('member_of_month')
@@ -253,6 +311,7 @@ export async function fetchMemberOfMonth(chapterId) {
 
 // ── Badges ──
 export async function fetchUserBadges(userId) {
+  if (!isSupabaseConfigured) return mockBadges;
   const { data, error } = await supabase
     .from('user_badges')
     .select('*')
@@ -264,6 +323,7 @@ export async function fetchUserBadges(userId) {
 
 // ── Checklist ──
 export async function fetchChecklistProgress(chapterId) {
+  if (!isSupabaseConfigured) return mockChecklistProgress;
   const { data, error } = await supabase
     .from('checklist_progress')
     .select('*')
@@ -273,6 +333,7 @@ export async function fetchChecklistProgress(chapterId) {
 }
 
 export async function updateChecklistItem(chapterId, itemKey, status) {
+  if (!isSupabaseConfigured) return;
   const { data: existing } = await supabase
     .from('checklist_progress')
     .select('id')
@@ -294,6 +355,9 @@ export async function updateChecklistItem(chapterId, itemKey, status) {
 
 // ── Animals ──
 export async function fetchAnimalsHelped(chapterId) {
+  if (!isSupabaseConfigured) {
+    return chapterId ? mockAnimalsHelped.filter((a) => a.chapter_id === chapterId) : mockAnimalsHelped;
+  }
   let query = supabase.from('animals_helped').select('*');
   if (chapterId) query = query.eq('chapter_id', chapterId);
   const { data, error } = await query;
@@ -303,6 +367,7 @@ export async function fetchAnimalsHelped(chapterId) {
 
 // ── Announcements ──
 export async function fetchAnnouncements(target) {
+  if (!isSupabaseConfigured) return mockAnnouncements;
   const { data, error } = await supabase
     .from('announcements')
     .select('*, users(name)')
@@ -314,12 +379,260 @@ export async function fetchAnnouncements(target) {
 }
 
 export async function createAnnouncement(announcement) {
+  if (!isSupabaseConfigured) return;
   const { error } = await supabase.from('announcements').insert(announcement);
   if (error) throw error;
 }
 
+// ── Org / Chapter Metrics ──
+// Computed metrics use a base value derived from source tables (pickups,
+// events) plus a manual adjustment offset that exec/pres can edit. Manual
+// metrics ignore the source and just expose the adjustment as the value.
+async function computeBase(source, chapterId) {
+  if (!source) return 0;
+  if (source === 'pickups_meals') {
+    const pickups = await fetchPickups(chapterId);
+    return pickups.reduce(
+      (sum, p) => sum + Math.round((p.estimated_weight_lbs || 0) * 1.2),
+      0
+    );
+  }
+  if (source === 'events_hours') {
+    const events = await fetchEvents(chapterId);
+    return events.reduce((sum, e) => sum + (e.filled_spots || 0) * 3, 0);
+  }
+  return 0;
+}
+
+function shapeMetric(row, base) {
+  const adjustment = Number(row.adjustment) || 0;
+  return {
+    ...row,
+    base,
+    value: row.computed ? base + adjustment : adjustment,
+  };
+}
+
+export async function fetchOrgMetrics({ scope = 'org', chapterId = null } = {}) {
+  const rows = !isSupabaseConfigured
+    ? mockOrgMetrics.filter((m) => {
+        if (scope === 'chapter') return m.chapter_id === chapterId;
+        return m.scope === 'org';
+      })
+    : await (async () => {
+        let query = supabase.from('org_metrics').select('*').order('label');
+        if (scope === 'chapter') query = query.eq('chapter_id', chapterId);
+        else query = query.eq('scope', 'org');
+        const { data, error } = await query;
+        if (error) throw error;
+        return data;
+      })();
+
+  const out = [];
+  for (const row of rows) {
+    const base = row.computed
+      ? await computeBase(row.source, row.chapter_id)
+      : 0;
+    out.push(shapeMetric(row, base));
+  }
+  return out;
+}
+
+export async function fetchOrgMetricByKey(key, chapterId = null) {
+  const all = await fetchOrgMetrics({
+    scope: chapterId ? 'chapter' : 'org',
+    chapterId,
+  });
+  return all.find((m) => m.key === key) || null;
+}
+
+export async function updateOrgMetric(id, { adjustment, label, updated_by }) {
+  if (!isSupabaseConfigured) {
+    const row = mockOrgMetrics.find((m) => m.id === id);
+    if (!row) return null;
+    if (adjustment !== undefined) row.adjustment = Number(adjustment) || 0;
+    if (label !== undefined) row.label = label;
+    row.updated_by = updated_by || row.updated_by;
+    row.updated_at = new Date().toISOString();
+    const base = row.computed ? await computeBase(row.source, row.chapter_id) : 0;
+    return shapeMetric(row, base);
+  }
+  const updates = { updated_at: new Date().toISOString() };
+  if (adjustment !== undefined) updates.adjustment = Number(adjustment) || 0;
+  if (label !== undefined) updates.label = label;
+  if (updated_by !== undefined) updates.updated_by = updated_by;
+  const { data, error } = await supabase
+    .from('org_metrics')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  const base = data.computed ? await computeBase(data.source, data.chapter_id) : 0;
+  return shapeMetric(data, base);
+}
+
+export async function createOrgMetric(metric) {
+  const row = {
+    id: `m-mock-${Date.now()}`,
+    computed: false,
+    source: null,
+    adjustment: 0,
+    updated_at: new Date().toISOString(),
+    ...metric,
+  };
+  if (!isSupabaseConfigured) {
+    mockOrgMetrics.push(row);
+    return shapeMetric(row, 0);
+  }
+  const { data, error } = await supabase
+    .from('org_metrics')
+    .insert(row)
+    .select()
+    .single();
+  if (error) throw error;
+  return shapeMetric(data, 0);
+}
+
+// ── Leaderboard ──
+// Single source of truth for who's doing the most. Aggregates the
+// member_activity log into per-volunteer totals, then sorts by the chosen
+// metric. Filters: time window + project. The "overall" sort uses a simple
+// weighted score so an all-rounder beats someone with one giant donation.
+//
+// Score weights — tunable in one place:
+//   1 point per meal rescued
+//   8 points per volunteer hour
+//   25 points per event attended
+//   1 point per dollar raised
+const SCORE_WEIGHTS = { meals: 1, hours: 8, events: 25, raised: 1 };
+
+function leaderboardCutoff(timeRange) {
+  const now = new Date();
+  if (timeRange === 'week') {
+    const d = new Date(now);
+    d.setDate(d.getDate() - 7);
+    return d;
+  }
+  if (timeRange === 'month') {
+    const d = new Date(now);
+    d.setMonth(d.getMonth() - 1);
+    return d;
+  }
+  if (timeRange === 'year') {
+    const d = new Date(now);
+    d.setFullYear(d.getFullYear() - 1);
+    return d;
+  }
+  return null; // 'all'
+}
+
+export async function fetchLeaderboard({
+  timeRange = 'all',
+  project = 'all',
+  sortBy = 'overall',
+  chapterId = null,
+  limit = 50,
+} = {}) {
+  // Pull raw activity rows.
+  let activities;
+  if (!isSupabaseConfigured) {
+    activities = mockMemberActivity;
+  } else {
+    const { data, error } = await supabase
+      .from('member_activity')
+      .select('*');
+    if (error) throw error;
+    activities = data || [];
+  }
+
+  // Apply filters before aggregation so totals match what's displayed.
+  const cutoff = leaderboardCutoff(timeRange);
+  const filtered = activities.filter((a) => {
+    if (cutoff && new Date(a.date) < cutoff) return false;
+    if (project !== 'all') {
+      // 'general' rows belong to no specific project, so they're excluded
+      // when the user picks a project filter — only matching project rows count.
+      if (a.project !== project) return false;
+    }
+    return true;
+  });
+
+  // Aggregate per user.
+  const byUser = new Map();
+  for (const a of filtered) {
+    const cur = byUser.get(a.user_id) || {
+      user_id: a.user_id,
+      meals: 0,
+      hours: 0,
+      events: 0,
+      raised: 0,
+      iris: 0,
+      evergreen: 0,
+      hydro: 0,
+    };
+    cur.meals += a.meals || 0;
+    cur.hours += a.hours || 0;
+    cur.events += a.events || 0;
+    cur.raised += a.raised || 0;
+    if (a.project === 'iris') cur.iris += (a.meals || 0) + (a.hours || 0);
+    if (a.project === 'evergreen') cur.evergreen += a.hours || 0;
+    if (a.project === 'hydro') cur.hydro += a.hours || 0;
+    byUser.set(a.user_id, cur);
+  }
+
+  // Hydrate with member name + chapter so the screen doesn't need a join.
+  const members = await fetchAllMembers();
+  const memberMap = new Map(members.map((m) => [m.id, m]));
+
+  const rows = [];
+  for (const stats of byUser.values()) {
+    const member = memberMap.get(stats.user_id);
+    if (!member) continue;
+    if (chapterId && member.chapter_id && member.chapter_id !== chapterId) continue;
+    const score =
+      stats.meals * SCORE_WEIGHTS.meals +
+      stats.hours * SCORE_WEIGHTS.hours +
+      stats.events * SCORE_WEIGHTS.events +
+      stats.raised * SCORE_WEIGHTS.raised;
+    rows.push({
+      ...stats,
+      name: member.name,
+      avatar_url: member.avatar_url || null,
+      chapter: member.chapters?.name || '—',
+      role: member.role,
+      score,
+    });
+  }
+
+  // Sort by chosen metric. 'overall' → composite score.
+  const sortKey = sortBy === 'overall' ? 'score' : sortBy;
+  rows.sort((a, b) => (b[sortKey] || 0) - (a[sortKey] || 0));
+
+  // Assign ranks based on the active sort.
+  rows.forEach((r, i) => {
+    r.rank = i + 1;
+  });
+
+  return rows.slice(0, limit);
+}
+
+// Look up a single user's leaderboard standing under the given filters.
+// Returns { rank, total, row } so the profile/impact screens can display
+// "you're #4 of 12 this month" without re-implementing the aggregation.
+export async function fetchUserLeaderboardStanding(userId, opts = {}) {
+  const rows = await fetchLeaderboard({ ...opts, limit: 1000 });
+  const idx = rows.findIndex((r) => r.user_id === userId);
+  return {
+    rank: idx >= 0 ? idx + 1 : null,
+    total: rows.length,
+    row: idx >= 0 ? rows[idx] : null,
+  };
+}
+
 // ── Admin: Members ──
 export async function fetchAllMembers() {
+  if (!isSupabaseConfigured) return mockMembers;
   const { data, error } = await supabase
     .from('users')
     .select('*, chapters(name)')
@@ -329,6 +642,7 @@ export async function fetchAllMembers() {
 }
 
 export async function updateUserRole(userId, role) {
+  if (!isSupabaseConfigured) return;
   const { error } = await supabase
     .from('users')
     .update({ role })

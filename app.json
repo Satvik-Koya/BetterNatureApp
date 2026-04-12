@@ -3,27 +3,75 @@
     "name": "Better Nature",
     "slug": "better-nature",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "orientation": "portrait",
-    "icon": "./src/assets/images/logo-circle.png",
+    "icon": "./src/assets/images/icon-1024.png",
     "userInterfaceStyle": "light",
     "splash": {
+      "image": "./src/assets/images/splash.png",
+      "resizeMode": "contain",
       "backgroundColor": "#F9F7F4"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
-      "supportsTablet": false,
-      "bundleIdentifier": "org.betternature.app"
+      "supportsTablet": true,
+      "bundleIdentifier": "org.betternature.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Better Nature uses the camera so you can photograph food rescue pickups and conservation events.",
+        "NSPhotoLibraryUsageDescription": "Better Nature accesses your photo library so you can share event and pickup photos.",
+        "CFBundleAllowMixedLocalizations": true
+      },
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
+        "foregroundImage": "./src/assets/images/adaptive-icon.png",
         "backgroundColor": "#F9F7F4"
       },
-      "package": "org.betternature.app"
+      "package": "org.betternature.app",
+      "versionCode": 1,
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "NOTIFICATIONS"
+      ]
     },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./src/assets/images/logo-circle.png",
+      "name": "Better Nature",
+      "shortName": "Better Nature",
+      "themeColor": "#2F5D50",
+      "backgroundColor": "#F9F7F4"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "REPLACE_AFTER_EAS_INIT"
+      }
+    },
+    "owner": "betternature",
     "plugins": [
       "expo-font",
-      "expo-notifications",
-      "expo-image-picker"
-    ]
+      [
+        "expo-notifications",
+        {
+          "icon": "./src/assets/images/notification-icon.png",
+          "color": "#2F5D50"
+        }
+      ],
+      "expo-image-picker",
+      "expo-asset"
+    ],
+    "updates": {
+      "url": "https://u.expo.dev/REPLACE_AFTER_EAS_INIT"
+    }
   }
 }

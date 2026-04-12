@@ -2,11 +2,13 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Colors, Type, Spacing } from '../../config/theme';
 import BrushText from '../ui/BrushText';
+import Logo from '../ui/Logo';
 
 export default function DashboardHeader({ user, chapterName, unreadCount, onNotifPress }) {
   return (
     <View style={styles.container}>
       <View style={styles.topRow}>
+        <Logo size={56} style={styles.logo} />
         <View style={styles.greeting}>
           <BrushText variant="screenTitle" style={styles.welcome}>
             Welcome back,
@@ -43,7 +45,11 @@ const styles = StyleSheet.create({
   topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+  },
+  logo: {
+    marginRight: 14,
+    backgroundColor: Colors.cream,
   },
   greeting: {
     flex: 1,

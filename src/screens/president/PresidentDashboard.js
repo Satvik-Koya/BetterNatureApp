@@ -1,0 +1,130 @@
+import React, { useEffect, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { Colors, Type, Radius, Shadows } from '../../config/theme';
+import BrushText from '../../components/ui/BrushText';
+import StatCard from '../../components/ui/StatCard';
+import ResponsiveContainer from '../../components/ui/ResponsiveContainer';
+import useBreakpoint from '../../hooks/useBreakpoint';
+import useAuthStore from '../../store/authStore';
+import { fetchEvents, fetchPickups, fetchChapterById } from '../../services/database';
+import { signOut } from '../../services/auth';
+
+const ACTIONS = [
+  { key: 'events', label: 'Manage Events', emoji: '📅', desc: 'Create and edit chapter events', screen: 'PresEvents' },
+  { key: 'members', label: 'Chapter Members', emoji: '👥', desc: 'View and manage your members', screen: 'PresMembers' },
+  { key: 'checklist', label: 'Chapter Checklist', emoji: '✅', desc: 'Track your chapter setup progress', screen: 'ChapterChecklist' },
+  { key: 'broadcast', label: 'Send Announcement', emoji: '📢', desc: 'Notify your chapter members', screen: 'PresBroadcast' },
+  { key: 'reports', label: 'Chapter Reports', emoji: '📊', desc: 'Hours, meals, donations this month', screen: 'PresReports' },
+  { key: 'metrics', label: 'Edit Metrics', emoji: '📈', desc: 'Adjust auto-tracked totals or add manual ones', screen: 'PresMetrics' },
+];
+
+export default function PresidentDashboard({ navigation }) {
+  const user = useAuthStore((s) => s.user);
+  const clearAuth = useAuthStore((s) => s.signOut);
+  const { isWide, isDesktop } = useBreakpoint();
+  const [chapter, setChapter] = useState(null);
+  const [events, setEvents] = useState([]);
+  const [pickups, setPickups] = useState([]);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const ch = await fetchChapterById(user?.chapter_id);
+        setChapter(ch);
+        const ev = await fetchEvents(user?.chapter_id);
+        setEvents(ev);
+        const pk = await fetchPickups(user?.chapter_id);
+        setPickups(pk);
+      } catch (e) {}
+    }
+    load();
+  }, []);
+
+  function handleSignOut() {
+    Alert.alert('Sign Out', 'Sign out of the president portal?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Sign Out',
+        style: 'destructive',
+        onPress: async () => {
+          await signOut();
+          clearAuth();
+        },
+      },
+    ]);
+  }
+
+  return (
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <ResponsiveContainer maxWidth={1100}>
+        <View style={styles.header}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.eyebrow}>President · {chapter?.name || 'Your Chapter'}</Text>
+            <BrushText variant="screenTitle" style={styles.title}>
+              Welcome, {user?.name?.split(' ')[0] || 'President'}!
+            </BrushText>
+          </View>
+          <TouchableOpacity onPress={handleSignOut} style={styles.signOutBtn}>
+            <Text style={styles.signOut}>Sign out</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.statsRow}>
+          <StatCard number={String(chapter?.member_count || 0)} label="Members" color={Colors.sage} style={styles.stat} />
+          <StatCard number={String(events.length)} label="Events" color={Colors.green} style={styles.stat} />
+          <StatCard number={String(pickups.length)} label="Pickups" color={Colors.pink} style={styles.stat} />
+        </View>
+
+        <BrushText variant="sectionHeader" style={styles.sectionHeader}>
+          Chapter Tools
+        </BrushText>
+
+        <View style={[styles.grid, isWide && styles.gridWide]}>
+          {ACTIONS.map((item) => (
+            <TouchableOpacity
+              key={item.key}
+              style={[
+                styles.card,
+                isWide && styles.cardWide,
+                isDesktop && styles.cardDesktop,
+              ]}
+              activeOpacity={0.8}
+              onPress={() => navigation.navigate(item.screen)}
+            >
+              <Text style={styles.emoji}>{item.emoji}</Text>
+              <Text style={styles.label}>{item.label}</Text>
+              <Text style={styles.desc}>{item.desc}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ResponsiveContainer>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: Colors.cream },
+  content: { padding: 24, paddingTop: 60, paddingBottom: 60 },
+  header: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 24 },
+  eyebrow: { fontSize: 12, color: Colors.sage, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
+  title: { color: Colors.green, marginTop: 4 },
+  signOutBtn: { paddingVertical: 6, paddingHorizontal: 10 },
+  signOut: { fontSize: 13, color: Colors.pink, fontWeight: '600' },
+  statsRow: { flexDirection: 'row', gap: 10, marginBottom: 28 },
+  stat: { flex: 1 },
+  sectionHeader: { color: Colors.green, marginBottom: 12 },
+
+  grid: { flexDirection: 'column', gap: 12 },
+  gridWide: { flexDirection: 'row', flexWrap: 'wrap', gap: 16 },
+  card: {
+    backgroundColor: Colors.white,
+    borderRadius: Radius.lg,
+    padding: 20,
+    ...Shadows.card,
+  },
+  cardWide: { flexBasis: '47%', flexGrow: 1, minWidth: 240 },
+  cardDesktop: { flexBasis: '31%' },
+  emoji: { fontSize: 32, marginBottom: 10 },
+  label: { fontSize: 16, fontWeight: '700', color: Colors.dark },
+  desc: { ...Type.caption, marginTop: 4 },
+});

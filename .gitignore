@@ -10,3 +10,4 @@ dist/
 *.orig.*
 web-build/
 .DS_Store
+google-service-account.json
